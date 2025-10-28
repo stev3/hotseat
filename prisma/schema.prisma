@@ -3,12 +3,8 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
-  url      = "file:./dev.db"
-  
-  // For production deployment with PostgreSQL, change to:
-  // provider = "postgresql"
-  // url      = env("DATABASE_URL")
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
 }
 
 model Session {
@@ -60,4 +56,3 @@ model Vote {
   @@index([roundId])
   @@index([participantId])
 }
-
