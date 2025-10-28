@@ -5,14 +5,12 @@ import { useRouter, useParams } from "next/navigation";
 import { io, Socket } from "socket.io-client";
 import QRCode from "qrcode";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { formatTime } from "@/lib/utils";
 
 type SessionState = {
   status: string;
   attendeesCount: number;
   participants: string[];
-  queue: string[];
 };
 
 type RoundState = {
@@ -38,10 +36,7 @@ export default function HostPage() {
     status: "LOBBY",
     attendeesCount: 0,
     participants: [],
-    queue: [],
   });
-    const [queueInput, setQueueInput] = useState("");
-    const [queue, setQueue] = useState<string[]>([]);
     const [roundState, setRoundState] = useState<RoundState>({
         roundId: null,
         participantName: "",
@@ -77,7 +72,6 @@ export default function HostPage() {
       status: data.status,
       attendeesCount: data.participants?.length || 0,
       participants: data.participants?.map((p: any) => p.name) || [],
-      queue: [],
     });
   };
 
@@ -92,7 +86,6 @@ export default function HostPage() {
             status: data.status,
             attendeesCount: data.attendeesCount,
             participants: data.participants || [],
-            queue: [],
           });
         });
 
@@ -135,25 +128,12 @@ export default function HostPage() {
         setSocket(socketInstance);
     };
 
-    const addToQueue = () => {
-        if (queueInput.trim()) {
-            setQueue([...queue, queueInput.trim()]);
-            setQueueInput("");
-        }
-    };
-
     const startSession = () => {
         if (socket && sessionState.attendeesCount > 0) {
             socket.emit("host:startSession", { sessionCode: code });
         }
     };
 
-    const startRound = (participantName: string) => {
-        if (socket) {
-            socket.emit("host:startRound", { sessionCode: code, participantName });
-        }
-        setQueue((q) => q.filter((name) => name !== participantName));
-    };
 
     const applyDeduction = () => {
         if (socket && roundState.roundId) {
@@ -207,9 +187,6 @@ export default function HostPage() {
                         <p className="text-2xl font-bold text-blue-600">
                             {sessionState.attendeesCount} Attendees
                         </p>
-                        <p className="mt-2 text-gray-600">
-                            Status: {sessionState.status}
-                        </p>
                     </div>
                 </div>
 
@@ -235,36 +212,6 @@ export default function HostPage() {
                     )}
                 </div>
 
-                {/* Queue */}
-                <div className="rounded-lg bg-white p-6 shadow">
-                    <h2 className="mb-4 text-xl font-semibold">Participant Queue</h2>
-                    <div className="mb-4 flex gap-2">
-                        <Input
-                            value={queueInput}
-                            onChange={(e) => setQueueInput(e.target.value)}
-                            placeholder="Participant name"
-                            onKeyDown={(e) => e.key === "Enter" && addToQueue()}
-                        />
-                        <Button onClick={addToQueue}>Add</Button>
-                    </div>
-                    <div className="space-y-2">
-                        {queue.map((name, idx) => (
-                            <div
-                                key={idx}
-                                className="flex items-center justify-between rounded border p-2"
-                            >
-                                <span>{name}</span>
-                                <Button
-                                    size="sm"
-                                    onClick={() => startRound(name)}
-                                    disabled={sessionState.status !== "ACTIVE"}
-                                >
-                                    Start Round
-                                </Button>
-                            </div>
-                        ))}
-                    </div>
-                </div>
 
                 {/* Actions */}
                 {sessionState.status === "LOBBY" && (
@@ -310,7 +257,7 @@ export default function HostPage() {
                         </div>
 
                         <div className="mt-4 flex gap-2">
-                            <Input
+                            <input
                                 type="number"
                                 min="0"
                                 max="10"
@@ -322,6 +269,7 @@ export default function HostPage() {
                                     }))
                                 }
                                 placeholder="Deduction (0-10)"
+                                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
                             />
                             <Button onClick={applyDeduction}>Apply Deduction</Button>
                         </div>
