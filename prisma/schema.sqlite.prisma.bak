@@ -3,13 +3,12 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider = "sqlite"
+  url      = "file:./dev.db"
   
-  // For local development, comment out the PostgreSQL lines above
-  // and uncomment the SQLite lines below:
-  // provider = "sqlite"
-  // url      = "file:./dev.db"
+  // For production deployment with PostgreSQL, change to:
+  // provider = "postgresql"
+  // url      = env("DATABASE_URL")
 }
 
 model Session {
@@ -61,3 +60,4 @@ model Vote {
   @@index([roundId])
   @@index([participantId])
 }
+
