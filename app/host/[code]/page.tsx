@@ -9,9 +9,10 @@ import { Input } from "@/components/ui/input";
 import { formatTime } from "@/lib/utils";
 
 type SessionState = {
-    status: string;
-    attendeesCount: number;
-    queue: string[];
+  status: string;
+  attendeesCount: number;
+  participants: string[];
+  queue: string[];
 };
 
 type RoundState = {
@@ -33,11 +34,12 @@ export default function HostPage() {
 
     const [session, setSession] = useState<any>(null);
     const [socket, setSocket] = useState<Socket | null>(null);
-    const [sessionState, setSessionState] = useState<SessionState>({
-        status: "LOBBY",
-        attendeesCount: 0,
-        queue: [],
-    });
+  const [sessionState, setSessionState] = useState<SessionState>({
+    status: "LOBBY",
+    attendeesCount: 0,
+    participants: [],
+    queue: [],
+  });
     const [queueInput, setQueueInput] = useState("");
     const [queue, setQueue] = useState<string[]>([]);
     const [roundState, setRoundState] = useState<RoundState>({
@@ -67,16 +69,17 @@ export default function HostPage() {
         };
     }, [code]);
 
-    const fetchSession = async () => {
-        const res = await fetch(`/api/session/${code}`);
-        const data = await res.json();
-        setSession(data);
-        setSessionState({
-            status: data.status,
-            attendeesCount: data.participants?.length || 0,
-            queue: [],
-        });
-    };
+  const fetchSession = async () => {
+    const res = await fetch(`/api/session/${code}`);
+    const data = await res.json();
+    setSession(data);
+    setSessionState({
+      status: data.status,
+      attendeesCount: data.participants?.length || 0,
+      participants: data.participants?.map((p: any) => p.name) || [],
+      queue: [],
+    });
+  };
 
     const initializeSocket = () => {
         const socketInstance = io({
@@ -84,8 +87,13 @@ export default function HostPage() {
             transports: ["websocket", "polling"],
         });
 
-        socketInstance.on("session:state", (data: SessionState) => {
-            setSessionState(data);
+        socketInstance.on("session:state", (data: any) => {
+          setSessionState({
+            status: data.status,
+            attendeesCount: data.attendeesCount,
+            participants: data.participants || [],
+            queue: [],
+          });
         });
 
         socketInstance.on("round:started", (data: any) => {
@@ -203,6 +211,28 @@ export default function HostPage() {
                             Status: {sessionState.status}
                         </p>
                     </div>
+                </div>
+
+                {/* Attendees List */}
+                <div className="rounded-lg bg-white p-6 shadow">
+                    <h2 className="mb-4 text-xl font-semibold">Connected Attendees</h2>
+                    {sessionState.participants.length > 0 ? (
+                        <div className="space-y-2">
+                            {sessionState.participants.map((name, idx) => (
+                                <div
+                                    key={idx}
+                                    className="flex items-center gap-2 rounded-lg border p-3 bg-green-50"
+                                >
+                                    <div className="h-2 w-2 rounded-full bg-green-500"></div>
+                                    <span className="font-medium">{name}</span>
+                                </div>
+                            ))}
+                        </div>
+                    ) : (
+                        <p className="text-gray-500 italic">
+                            No attendees connected yet. Share the QR code!
+                        </p>
+                    )}
                 </div>
 
                 {/* Queue */}

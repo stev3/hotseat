@@ -81,15 +81,16 @@ app.prepare().then(() => {
                 socket.data.participantId = participant.id;
                 socket.data.sessionCode = sessionCode;
 
-                const participants = await prisma.participant.findMany({
-                    where: { sessionId: session.id },
-                });
+        const participants = await prisma.participant.findMany({
+          where: { sessionId: session.id },
+        });
 
-                io.to(`session:${sessionCode}`).emit('session:state', {
-                    status: session.status,
-                    attendeesCount: participants.length,
-                    queue: [],
-                });
+        io.to(`session:${sessionCode}`).emit('session:state', {
+          status: session.status,
+          attendeesCount: participants.length,
+          participants: participants.map(p => p.name),
+          queue: [],
+        });
             } catch (error) {
                 console.error('attendee:join error:', error);
                 socket.emit('error', { message: 'Failed to join' });
@@ -116,9 +117,10 @@ app.prepare().then(() => {
                 });
 
                 io.to(`session:${sessionCode}`).emit('session:state', {
-                    status: 'ACTIVE',
-                    attendeesCount: session.participants.length,
-                    queue: [],
+                  status: 'ACTIVE',
+                  attendeesCount: session.participants.length,
+                  participants: session.participants.map(p => p.name),
+                  queue: [],
                 });
             } catch (error) {
                 console.error('host:startSession error:', error);
